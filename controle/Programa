@@ -1,0 +1,1502 @@
+package br.com.gerenciadorepiepc.controle;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.joda.time.DateTime;
+import org.joda.time.Days;
+import org.joda.time.Months;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
+import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+import br.com.jansenfelipe.androidmask.MaskEditTextChangedListener;
+
+import com.example.gerenciadorepi_epc_banco.R;
+
+public class Programa extends ActionBarActivity {
+
+	// Declarações das Variaveis
+
+	// Button
+	Button btCadastroNovo, btConsultaNovo, btcadViat, btcadfunc, btcadEpi,
+			btcadEpc, btcaViatura, btsalvarFunc, btvoltarfunc, btProxFunc,
+			btAntFunc, btprimeirofunc, btultimofunc, btalterarFunc, btConsFunc,
+			btConsEpi, btConsEpc, btConsViat, btConsFuncVoltar,
+			btSalvarAltFunc, btdeletarFunc, btAddEpi, btSalvarEpi, btVoltarEpi,
+			btSalvarViatura, btVoltarViatura, btPrimeiroViatura,
+			btAnteriorViatura, btProximoViatura, btUltimoViatura,
+			btAlterarViatura, btDeletarViatura, btnovoViatura, btSalvarEpc,
+			btVoltarEpc, btAddEpc, 
+			btVoltarConsultaNovo,btvoltarConsFunc, btNovoFunc,btVoltarPrincipal,btConsultaNovoEpi,
+			btConsultaNovoEpc,btManterEpiPrimeiro,btManterEpiAnterior,btManterEpiProximo,
+			btManterEpiUltimo,btManterEpiSalvar,btManterEpiAlterar,btManterEpiVoltar,
+			btManterEpiDeletar,btConsultarNovoAltDelEpi,btConsultaNovoAltDelEpc;
+
+	// EdiText
+	EditText etfunc_matricula, etfunc_nome, etfunc_funcao, etfunc_area,
+			etConsFuncNome, etConsFuncMat, etConsFuncArea, etConFuncFuncao,
+			etdatatesteEpi, etlaudoepi, etDataEntregaEpi, etPlaca,
+			etAreaViatura, etDataTesteEpc, etLaudoEpc,etManterEpiDataTeste,etManterEpiDataVencimento,
+			etManterEpiLaudo;
+
+	// Radio
+
+	RadioGroup rgSituacaoEpi;
+	RadioButton rbNovoEpi, rbRetesteEpi;
+	Spinner spNomeEpi, spcondicao, spNomeEpc, spCondicaoEpc,spManterEpiFuncionario,spManterEpiCondicao,
+	spManterEpiNome;
+
+	// Text View
+
+	TextView tvfunc, tvVencEpi, tvViatura, tvVencEpc,tvManterEpiCondicao,tvManterEpiNome,tvManterEpiFuncioanario;
+
+	ListView ltEpi,ltEpc;
+	MaskEditTextChangedListener data, data2;
+
+	String[] listaepi = { "Luva Classe 0", "Luva Classe 1", "Luva Classe 2" };
+	String[] condicao = { "Novo", "Reteste" };
+	String[] listaEpc = { "Manta", "Aterramento" };
+	SQLiteDatabase banco = null;
+	Cursor cursor_func, cursor_func2, cursor_epi, cursor_viatura, cursor_epc;
+	private boolean alterar = true;
+
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.principal);
+
+		criaBanco();
+		iniciarObjetos();
+		listarFuncionario();
+		if(cursor_func.getCount() >0){
+		avisaDias();
+		avisaDiasEpc();
+		}else{
+			AlertDialog.Builder alerta = new AlertDialog.Builder(Programa.this);
+			alerta.setTitle("Bem Vindo");
+			alerta.setNeutralButton("Pronto?", null);
+			alerta.setMessage("Bem Vindo ao Gerenciador de EPI e EPC!\nCom este aplicativo você pode gerenciar" +
+					" todos os EPI e EPC que possuem data de Vencimento!" +
+					"Realize cadastros de Funcionários e seus EPI e Viaturas e seus EPC.\n" +
+					" Cada vez que o Aplicativo é iniciado ele avisa os equipamentos que estão perto" +
+					" da data de vencimento!\nAproveite!");
+			alerta.show();
+		}
+		// Metódo do botão da tela principal para chamar a tela de cadastro
+		
+		
+		
+		
+		btConsultaNovo.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				//chamaTelaListarEpi();
+				chamaTelaConsultaNova();
+			}
+		});
+
+		// Metódo do botão da tela principal para chamar a tela de cadastro
+
+		
+		btCadastroNovo.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				chamaTelaConsulta();
+				// listarFuncionario();
+				// chamaTelaListarEpi();
+				
+
+			}
+		});
+		
+	
+	}
+
+	public void chamaTelaListarEpi() {
+		setContentView(R.layout.listarepi);
+		iniciarObjetos();
+		ltEpi.setAdapter(listarEpiFunc());
+
+	}
+	public void chamaTelaListarEpc() {
+		setContentView(R.layout.listarepc);
+		iniciarObjetos();
+		ltEpc.setAdapter(listarEpcViat());
+
+	}
+	// Metódo para chamar a tela de cadastro
+	public void chamaTelaCadastro() {
+		setContentView(R.layout.tela_consultas);
+		iniciarObjetos();
+		btcadfunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				chamaTelaCadFunc();
+			}
+		});
+		
+	}
+
+	// metódo para chamar o cadastro de funcionarios
+
+	public void chamaTelaCadFunc() {
+		setContentView(R.layout.telacadastrofuncionario);
+		iniciarObjetos();
+		desativarCampos();
+		//
+		// if(cursor_func.getCount()>0){
+		//
+		// moverPrimeiro();
+		//
+		// }else{
+		//
+		// Toast.makeText(getApplicationContext(), "Nenhum Registro",
+		// Toast.LENGTH_LONG).show();
+		//
+		// }
+
+		// Metódo do botão salvar Funcionário
+		btsalvarFunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				salvarFuncionario();
+			}
+		});
+
+		btvoltarfunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				chamaTelaCadastro();
+			}
+		});
+
+	}
+
+	public void chamaTelaConsulta() {
+		setContentView(R.layout.tela_cadastros);
+		iniciarObjetos();
+
+		btConsFunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				chamaTelaCadastroFunc();
+
+			}
+		});
+		btConsViat.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+
+				chamaTelaCadViatura();
+			}
+		});
+			btVoltarPrincipal.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+			// TODO Auto-generated method stub
+				//Bundle bundle = new Bundle();
+				
+				chamaPrincipal();
+			}
+		});
+	}
+
+	public void chamaTelaConsultaNova(){
+		setContentView(R.layout.telaconsultanovo);
+		iniciarObjetos();
+		btConsultaNovoEpi.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+			
+				chamaTelaListarEpi();
+			}
+		});
+		btConsultaNovoEpc.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				chamaTelaListarEpc();
+			}
+		});
+		btVoltarConsultaNovo.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+			chamaPrincipal();	
+			}
+		});
+		btConsultarNovoAltDelEpi.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+			
+				chamaTelaManterEpi();
+				iniciarObjetos();
+				carregaEpi();
+				mostrarDadosManterEpi();
+				
+			}
+		});
+		
+	}
+	
+	
+	
+	public void chamaPrincipal(){
+		
+		setContentView(R.layout.principal);
+	}
+	public void chamaTelaCadastroFunc() {
+		setContentView(R.layout.telaconsultafuncionario);
+		listarFuncionario();
+		iniciarObjetos();
+		desativarCampos();
+		if (cursor_func.getCount() > 0) {
+			Toast.makeText(getApplicationContext(), "Cadastro de Funcionários",
+					Toast.LENGTH_LONG).show();
+			mostrarDados();
+			desativarCampos();
+		} else {
+			desativarCampos();
+			Toast.makeText(getApplicationContext(), "Cadastro de Funcionários",
+					Toast.LENGTH_LONG).show();
+		}
+
+		btvoltarConsFunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				chamaTelaConsulta();
+			}
+		});
+
+		btProxFunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				moverProximo();
+			}
+		});
+		btAntFunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				moverAnterior();
+			}
+		});
+		btprimeirofunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				moverPrimeiro();
+			}
+		});
+		btultimofunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				moverUltimo();
+			}
+		});
+		btalterarFunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				ativarCampos();
+				alterar = true;
+			}
+		});
+		btSalvarAltFunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				if (!alterar) {
+					salvarFuncionario();
+					listarFuncionario();
+					desativarCampos();
+					moverUltimo();
+				} else {
+					alterarFuncionario();
+					listarFuncionario();
+					mostrarDados();
+					desativarCampos();
+
+				}
+			}
+		});
+		btdeletarFunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				deletarFuncionario();
+				listarFuncionario();
+				mostrarDados();
+			}
+		});
+		btAddEpi.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				// mostrarDados();
+				// buscaFuncionario(cursor_func.getColumnIndex("id_func"));
+				chamatelaCadEpi();
+
+			}
+		});
+
+		btNovoFunc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				alterar = false;
+				etConFuncFuncao.setText("");
+				etConsFuncArea.setText("");
+				etConsFuncMat.setText("");
+				etConsFuncNome.setText("");
+				ativarCampos();
+			}
+		});
+
+	}
+
+	public void criaBanco() {
+		try {
+			String funcionario = "create table if not exists funcionario("
+					+ "id_func integer primary key autoincrement,"
+					+ "matricula text," + "nome text," + "area text,"
+					+ "funcao text)";
+
+			String epi = "create table  if not exists epi"
+					+ "(id_epi integer primary key autoincrement,"
+					+ "laudo text,"
+					+ "nome text,"
+					+ "condicao text,"
+					+ "data_teste date,data_venc_epi date,"
+					+ "id_func_fk int not null, FOREIGN KEY (id_func_fk)references funcionario(id_func))";
+
+			String viatura = "create table if not exists viatura("
+					+ "id_viat integer primary key autoincrement,"
+					+ "placa text," + "area text)";
+
+			String epc = "create table if not exists epc("
+					+ "id_epc integer primary key autoincrement,"
+					+ "laudo text,"
+					+ "nome text,"
+					+ "condicao text,"
+					+ "data_teste date,data_venc_epc date,"
+					+ "id_viat_fk int not null, FOREIGN KEY(id_viat_fk)references viatura(id_viat))";
+
+			banco = openOrCreateDatabase("gerenciador2", MODE_WORLD_READABLE,
+					null);
+			banco.execSQL(funcionario);
+			banco.execSQL(epi);
+			banco.execSQL(viatura);
+			banco.execSQL(epc);
+		} catch (Exception ex) {
+			Toast.makeText(getApplicationContext(), "Erro" + ex.getMessage(),
+					Toast.LENGTH_LONG);
+		}
+
+	}
+
+	public void salvarFuncionario() {
+		iniciarObjetos();
+
+		String matricula = etConsFuncMat.getText().toString();
+		String nome = etConsFuncNome.getText().toString();
+		String funcao = etConFuncFuncao.getText().toString();
+		String area = etConsFuncArea.getText().toString();
+		try {
+			banco.execSQL("insert into funcionario(matricula,nome,area,funcao) values("
+					+ "'"
+					+ matricula
+					+ "',"
+					+ "'"
+					+ nome
+					+ "',"
+					+ "'"
+					+ area
+					+ "'," + "'" + funcao + "')");
+			AlertDialog.Builder alerta = new AlertDialog.Builder(Programa.this);
+			alerta.setTitle("Cadastro de Funcionário!");
+			alerta.setNeutralButton("OK", null);
+			alerta.setMessage("Funcionário " + nome
+					+ " Cadastrado com Sucesso!");
+			alerta.show();
+
+		} catch (Exception ex) {
+			Toast.makeText(getApplicationContext(), "Erro " + ex.getMessage(),
+					Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void alterarFuncionario() {
+		String sql = "update funcionario set nome = '"
+				+ etConsFuncNome.getText().toString()
+				+ "' ,"
+				+ "funcao = '"
+				+ etConFuncFuncao.getText().toString()
+				+ "',area = '"
+				+ etConsFuncArea.getText().toString()
+				+ "' ,"
+				+ "matricula = '"
+				+ etConsFuncMat.getText().toString()
+				+ "' where funcionario.id_func = "
+				+ Integer.parseInt(cursor_func.getString(cursor_func
+						.getColumnIndex("id_func")));
+
+		banco.execSQL(sql);
+		cursor_func.moveToFirst();
+
+	}
+
+	public void deletarFuncionario() {
+		String sql = "delete from funcionario where id_func = "
+				+ ""
+				+ Integer.parseInt(cursor_func.getString(cursor_func
+						.getColumnIndex("id_func")));
+		banco.execSQL(sql);
+		moverAnterior();
+
+	}
+
+	public void listarFuncionario() {
+
+		cursor_func = banco.query("funcionario", new String[] { "id_func",
+				"matricula", "nome", "area", "funcao" }, null, null, null,
+				null, null);
+		if (cursor_func.getCount() == 0) {
+			Toast.makeText(getApplicationContext(),
+					"Nenhum Funcionario Cadastrado", Toast.LENGTH_LONG);
+
+		} else {
+			cursor_func.moveToFirst();
+		}
+
+	}
+
+	public void buscaFuncionario(int id) {
+
+		cursor_func2 = banco.query("funcionario", new String[] { "id_func",
+				"matricula", "nome", "area", "funcao" }, "id_func = " + id,
+				null, null, null, "nome");
+		cursor_func2.moveToFirst();
+		Toast.makeText(getApplicationContext(), "Cadastro de EPI",
+				Toast.LENGTH_LONG).show();
+
+	}
+
+	public void moverProximo() {
+		if (cursor_func.getCount() > 0) {
+
+			if (cursor_func.isLast()) {
+				Toast.makeText(getApplicationContext(), "Último registro",
+						Toast.LENGTH_LONG).show();
+			} else {
+				cursor_func.moveToNext();
+				mostrarDados();
+				desativarCampos();
+			}
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhum Funcionário Cadastrado", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void moverAnterior() {
+
+		if (cursor_func.getCount() > 0) {
+
+			if (cursor_func.isFirst()) {
+				Toast.makeText(getApplicationContext(), "Primeiro registro",
+						Toast.LENGTH_LONG).show();
+			} else {
+				cursor_func.moveToPrevious();
+				mostrarDados();
+				desativarCampos();
+			}
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhum Funcionário Cadastrado", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void moverPrimeiro() {
+		if (cursor_func.getCount() > 0) {
+
+			if (cursor_func.isFirst()) {
+				Toast.makeText(getApplicationContext(), "Primeiro registro",
+						Toast.LENGTH_LONG).show();
+			} else {
+				cursor_func.moveToFirst();
+				mostrarDados();
+				desativarCampos();
+			}
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhum Funcionário Cadastrado", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void moverUltimo() {
+		if (cursor_func.getCount() > 0) {
+
+			if (cursor_func.isLast()) {
+				Toast.makeText(getApplicationContext(), "Último registro",
+						Toast.LENGTH_LONG).show();
+			} else {
+				cursor_func.moveToLast();
+				mostrarDados();
+				desativarCampos();
+			}
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhum Funcionário Cadastrado", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void mostrarDados() {
+		iniciarObjetos();
+		if (cursor_func.getCount() > 0) {
+			etConsFuncMat.setText(cursor_func.getString(cursor_func
+					.getColumnIndex("matricula")));
+			etConsFuncNome.setText(cursor_func.getString(cursor_func
+					.getColumnIndex("nome")));
+			etConFuncFuncao.setText(cursor_func.getString(cursor_func
+					.getColumnIndex("funcao")));
+			etConsFuncArea.setText(cursor_func.getString(cursor_func
+					.getColumnIndex("area")));
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhum Funcionário Cadastrado", Toast.LENGTH_LONG).show();
+
+		}
+	}
+
+	public void iniciarObjetos() {
+		btVoltarConsultaNovo = (Button)findViewById(R.id.btVoltarConsultaNovo);
+		btConsultaNovoEpi = (Button)findViewById(R.id.btConsultaNovoEpi);
+		btConsultaNovoEpc = (Button)findViewById(R.id.btConsultaNovoEpc);
+		// Button Tela Principal
+		btVoltarPrincipal = (Button)findViewById(R.id.btVoltarPrincipal);
+		btConsultaNovo = (Button) findViewById(R.id.btCadastro);
+		btCadastroNovo = (Button) findViewById(R.id.btConsultar);
+
+		// Button Tela de Botoes de Cadastros
+
+		// Button Tela de Botoes Consultas
+
+		btConsFunc = (Button) findViewById(R.id.btConsultaFunc);
+		btConsViat = (Button) findViewById(R.id.btConsultaViat);
+
+		// Button Tela Cadastro Funcionário
+		btsalvarFunc = (Button) findViewById(R.id.btSalvarFunc);
+		btvoltarfunc = (Button) findViewById(R.id.btVoltarCadFuncPrinc);
+
+		// EditText Tela Cadastro Funcionário
+
+		etfunc_matricula = (EditText) findViewById(R.id.etConsMatrFunc);
+		etfunc_nome = (EditText) findViewById(R.id.etConsNomeFunc);
+		etfunc_funcao = (EditText) findViewById(R.id.etConsFuncaoFunc);
+		etfunc_area = (EditText) findViewById(R.id.etConsAreaFunc);
+
+		// Button Tela de Consulta Funcionário
+		btProxFunc = (Button) findViewById(R.id.btProximoFunc);
+		btprimeirofunc = (Button) findViewById(R.id.btPrimeiroFunc);
+		btAntFunc = (Button) findViewById(R.id.btVoltarEpc);
+		btultimofunc = (Button) findViewById(R.id.btUltimoFunc);
+		btalterarFunc = (Button) findViewById(R.id.btConsAlterarFunc);
+		btConsFuncVoltar = (Button) findViewById(R.id.btConsFuncVoltar);
+		btAddEpi = (Button) findViewById(R.id.btAdicionarEpi);
+		btdeletarFunc = (Button) findViewById(R.id.btDeletarFunc);
+		btSalvarAltFunc = (Button) findViewById(R.id.btSalvarAltFunc);
+		btvoltarConsFunc = (Button) findViewById(R.id.btConsFuncVoltar);
+		btNovoFunc = (Button) findViewById(R.id.btNovoFunc);
+		// EditText Tela de Consulta Funcionário
+		etConFuncFuncao = (EditText) findViewById(R.id.etConsFuncaoFunc);
+		etConsFuncArea = (EditText) findViewById(R.id.etConsAreaFunc);
+		etConsFuncNome = (EditText) findViewById(R.id.etConsNomeFunc);
+		etConsFuncMat = (EditText) findViewById(R.id.etConsMatrFunc);
+
+		// Tela cadastro Epi
+		tvfunc = (TextView) findViewById(R.id.tvNomeFunc);
+		tvVencEpi = (TextView) findViewById(R.id.tvVencimentoEpi);
+		etdatatesteEpi = (EditText) findViewById(R.id.etDataTEpi);
+		etDataEntregaEpi = (EditText) findViewById(R.id.etDataEntregaEpi);
+		etlaudoepi = (EditText) findViewById(R.id.etLaudoEpi);
+		btSalvarEpi = (Button) findViewById(R.id.btSalvarEp);
+		btVoltarEpi = (Button) findViewById(R.id.btVoltarCadEpi);
+		// Spinner e Radio
+		spNomeEpi = (Spinner) findViewById(R.id.spNomeEpi);
+		spcondicao = (Spinner) findViewById(R.id.spCondicao);
+
+		// Tela de Cadastro Viatura
+		btPrimeiroViatura = (Button) findViewById(R.id.btPrimeiroViatura);
+		btAnteriorViatura = (Button) findViewById(R.id.btAnteriorViatura);
+		btProximoViatura = (Button) findViewById(R.id.btProximoViatura);
+		btUltimoViatura = (Button) findViewById(R.id.btUltimoViatura);
+		btDeletarViatura = (Button) findViewById(R.id.btDeletarViatura);
+		btSalvarViatura = (Button) findViewById(R.id.btSalvarViatura);
+		btVoltarViatura = (Button) findViewById(R.id.btVoltarViatura);
+		etAreaViatura = (EditText) findViewById(R.id.etArea);
+		etPlaca = (EditText) findViewById(R.id.etPlaca);
+		btAlterarViatura = (Button) findViewById(R.id.btAlterarViatura);
+		btnovoViatura = (Button) findViewById(R.id.btNovoViatura);
+		btAddEpc = (Button) findViewById(R.id.btAddEpc);
+
+		// Tela de Cadastro de Epc
+		btSalvarEpc = (Button) findViewById(R.id.btSalvarEpc);
+		btVoltarEpc = (Button) findViewById(R.id.btVoltarEpc);
+		etDataTesteEpc = (EditText) findViewById(R.id.etDataTEpc);
+		etLaudoEpc = (EditText) findViewById(R.id.etLaudoEpc);
+		spCondicaoEpc = (Spinner) findViewById(R.id.spCondicaoEpc);
+		spNomeEpc = (Spinner) findViewById(R.id.spNomeEpc);
+		tvViatura = (TextView) findViewById(R.id.tvViatura);
+		tvVencEpc = (TextView) findViewById(R.id.tvVEpc);
+
+		ltEpi = (ListView) findViewById(R.id.lvListaEpi);
+		ltEpc = (ListView) findViewById(R.id.lvListaEpc);
+	
+		btManterEpiAlterar = (Button)findViewById(R.id.btManterEPiAlterar);
+		btManterEpiAnterior = (Button)findViewById(R.id.btManterEpiAnterior);
+		btManterEpiPrimeiro = (Button)findViewById(R.id.btManterEpiPrimeiro);
+		btManterEpiProximo = (Button)findViewById(R.id.btManterEpiPRoximo);
+		btManterEpiUltimo = (Button)findViewById(R.id.btManterUltimo);
+		btManterEpiDeletar = (Button)findViewById(R.id.btManterEpiDeletar);
+		btManterEpiSalvar = (Button)findViewById(R.id.btManterEpiVoltar);
+		btManterEpiVoltar = (Button)findViewById(R.id.btManterEpiVoltar);
+		etManterEpiDataTeste = (EditText)findViewById(R.id.etManterEpiDataTeste);
+		etManterEpiDataVencimento = (EditText)findViewById(R.id.etManterEpiDataVencimento);
+		etManterEpiLaudo = (EditText)findViewById(R.id.etManterEpiLaudo);
+		btConsultarNovoAltDelEpi = (Button)findViewById(R.id.btConsultaNovoAltDelEpi);
+		btConsultaNovoAltDelEpc = (Button)findViewById(R.id.btConsultaNovoAltDelEpc);
+		spManterEpiFuncionario = (Spinner) findViewById(R.id.spManterEpiFuncionario);
+		spManterEpiCondicao = (Spinner) findViewById(R.id.spManterEpiCondicao);
+		spManterEpiNome = (Spinner) findViewById(R.id.spManterEpiNome);
+		tvManterEpiCondicao = (TextView)findViewById(R.id.tvManterEpiCondicao);
+		tvManterEpiFuncioanario = (TextView)findViewById(R.id.tvManterEpiFuncionario);
+		tvManterEpiNome = (TextView)findViewById(R.id.tvManterEpiNome);
+	}
+
+	// Metódo para chamar a Tela de Cadastro de Epi
+
+	public void ativarCampos() {
+		iniciarObjetos();
+		etConFuncFuncao.setEnabled(true);
+		etConsFuncArea.setEnabled(true);
+		etConsFuncMat.setEnabled(true);
+		etConsFuncNome.setEnabled(true);
+		btSalvarAltFunc.setEnabled(true);
+	}
+
+	public void desativarCampos() {
+		iniciarObjetos();
+		etConFuncFuncao.setEnabled(false);
+		etConsFuncArea.setEnabled(false);
+		etConsFuncMat.setEnabled(false);
+		etConsFuncNome.setEnabled(false);
+		btSalvarAltFunc.setEnabled(false);
+	}
+
+	public void desativarCampoEpi() {
+		etlaudoepi.setEnabled(false);
+		spNomeEpi.setEnabled(false);
+		etdatatesteEpi.setEnabled(false);
+		btSalvarEpi.setEnabled(false);
+		etDataEntregaEpi.setEnabled(false);
+	}
+
+	public void desativarCamposViatura() {
+		etAreaViatura.setEnabled(false);
+		etPlaca.setEnabled(false);
+		btSalvarViatura.setEnabled(false);
+	}
+
+	// Metodos Epi
+	public void chamatelaCadEpi() {
+
+		setContentView(R.layout.telacadastroepi);
+		iniciarObjetos();
+		listarEpi();
+		Toast.makeText(getApplicationContext(), "Cadastro de EPI",
+				Toast.LENGTH_LONG).show();
+
+		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+				android.R.layout.simple_list_item_1, listaepi);
+
+		ArrayAdapter<String> adapter2 = new ArrayAdapter<String>(this,
+				android.R.layout.simple_list_item_1, condicao);
+		spNomeEpi.setAdapter(adapter);
+		spcondicao.setAdapter(adapter2);
+		tvfunc.setText(cursor_func.getString(cursor_func.getColumnIndex("nome")));
+		data = new MaskEditTextChangedListener("##/##/####", etdatatesteEpi);
+		data2 = new MaskEditTextChangedListener("##/##/####", etDataEntregaEpi);
+		etdatatesteEpi.addTextChangedListener(data);
+		etDataEntregaEpi.addTextChangedListener(data2);
+		btSalvarEpi.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				salvarEpi();
+
+			}
+		});
+		btVoltarEpi.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				chamaTelaCadastroFunc();
+			}
+
+		});
+
+	}
+
+	// Metódo para listar todos os EPI cadastrados
+	public void listarEpi() {
+
+		cursor_epi = banco.query("epi",
+				new String[] { "id_epi", "laudo", "nome", "condicao",
+						"data_teste", "data_venc_epi", "id_func_fk" }, null,
+				null, null, null, null);
+		cursor_epi.moveToFirst();
+
+	}
+
+	public void salvarEpi() {
+		iniciarObjetos();
+
+		int idfunc = Integer.parseInt(cursor_func.getString(cursor_func
+				.getColumnIndex("id_func")));
+		String laudo = etlaudoepi.getText().toString();
+		String nome = spNomeEpi.getSelectedItem().toString();
+		String dataTeste = etdatatesteEpi.getText().toString();
+		String dataEntrega = etDataEntregaEpi.getText().toString();
+		int dia = Integer.parseInt(dataTeste.substring(0, 2));
+		int mes = Integer.parseInt(dataTeste.substring(3, 5));
+		int ano = Integer.parseInt(dataTeste.substring(6, 10));
+		int diaEntrega = Integer.parseInt(dataEntrega.substring(0, 2));
+		int mesEntrega = Integer.parseInt(dataEntrega.substring(3, 5));
+		int anoEntrega = Integer.parseInt(dataEntrega.substring(6, 10));
+		DateTime dataVenc;
+		DateTime dataTesteForm = new DateTime(ano, mes, dia, 0, 0);
+		DateTime dataEntregaForm = new DateTime(anoEntrega, mesEntrega,
+				diaEntrega, 0, 0);
+
+		String condicao = spcondicao.getSelectedItem().toString();
+
+		if (condicao.equals("Novo")) {
+			dataVenc = dataTesteForm.plusMonths(9);
+			int periodo = Months.monthsBetween(dataEntregaForm, dataVenc)
+					.getMonths();
+
+			if (periodo <= 6) {
+				DateTimeFormatter dtfPadrao = DateTimeFormat
+						.forPattern("dd/MM/yyyy");
+				tvVencEpi.setText(dataVenc.toString(dtfPadrao));
+			} else {
+
+				DateTimeFormatter dtfPadrao = DateTimeFormat
+						.forPattern("dd/MM/yyyy");
+				tvVencEpi.setText(dataEntregaForm.plusMonths(6).toString(
+						dtfPadrao));
+			}
+		} else {
+			dataVenc = dataTesteForm.plusMonths(6);
+			DateTimeFormatter dtfPadrao = DateTimeFormat
+					.forPattern("dd/MM/yyyy");
+			tvVencEpi.setText(dataVenc.toString(dtfPadrao));
+		}
+		try {
+			banco.execSQL("insert into epi(laudo,nome,condicao,data_teste,data_venc_epi,id_func_fk) values("
+					+ "'"
+					+ laudo
+					+ "',"
+					+ "'"
+					+ nome
+					+ "',"
+					+ "'"
+					+ condicao
+					+ "',"
+					+ "'"
+					+ dataTesteForm
+					+ "','"
+					+ dataVenc
+					+ "',"
+					+ idfunc + ");");
+			listarEpi();
+			AlertDialog.Builder alerta = new AlertDialog.Builder(Programa.this);
+			alerta.setTitle("Cadastro de EPI");
+			alerta.setNeutralButton("OK", null);
+			alerta.setMessage("Epi " + nome + " Cadastrado com Sucesso!");
+			alerta.show();
+			desativarCampoEpi();
+
+		} catch (Exception ex) {
+			Toast.makeText(getApplicationContext(), "Erro " + ex.getMessage(),
+					Toast.LENGTH_LONG).show();
+		}
+
+	}
+
+	public void chamaTelaCadViatura() {
+
+		setContentView(R.layout.telacadastroviatura);
+		Toast.makeText(getApplicationContext(), "Cadastro de Viaturas",
+				Toast.LENGTH_LONG).show();
+		iniciarObjetos();
+		desativarCamposViatura();
+		listarViatura();
+		mostrarDadosViatura();
+
+		btVoltarViatura.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				chamaTelaConsulta();
+			}
+		});
+
+		btAddEpc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				chamaTelaCadEpc();
+			}
+		});
+		btPrimeiroViatura.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				moverPrimeiroViatura();
+			}
+		});
+		btAnteriorViatura.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				moverAnteriorViatura();
+			}
+		});
+		btProximoViatura.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				moverProximoViatura();
+			}
+		});
+		btUltimoViatura.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				moverUltimoViatura();
+			}
+		});
+		btSalvarViatura.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				if (!alterar) {
+					salvarViatura();
+				} else {
+					alterarViatura();
+				}
+			}
+		});
+		btAlterarViatura.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				habilitarCamposViatura();
+				alterar = true;
+			}
+		});
+		btDeletarViatura.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				deletarViatura();
+			}
+		});
+		btnovoViatura.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				habilitarCamposViatura();
+				limparCampos();
+				alterar = false;
+			}
+		});
+	}
+
+	public void listarViatura() {
+		cursor_viatura = banco.query("viatura", new String[] { "id_viat",
+				"placa", "area" }, null, null, null, null, null);
+		cursor_viatura.moveToFirst();
+
+	}
+
+	public void mostrarDadosViatura() {
+		iniciarObjetos();
+		if (cursor_viatura.getCount() > 0) {
+			etPlaca.setText(cursor_viatura.getString(cursor_viatura
+					.getColumnIndex("placa")));
+			etAreaViatura.setText(cursor_viatura.getString(cursor_viatura
+					.getColumnIndex("area")));
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhuma Viatura Cadastrada", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void moverProximoViatura() {
+
+		if (cursor_viatura.getCount() > 0) {
+			if (cursor_viatura.isLast()) {
+				Toast.makeText(getApplicationContext(), "Último registro",
+						Toast.LENGTH_LONG).show();
+			} else {
+				cursor_viatura.moveToNext();
+				mostrarDadosViatura();
+				desativarCamposViatura();
+			}
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhuma Viatura Cadastrada", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void moverAnteriorViatura() {
+
+		if (cursor_viatura.getCount() > 0) {
+			if (cursor_viatura.isFirst()) {
+				Toast.makeText(getApplicationContext(), "Primeiro Registro",
+						Toast.LENGTH_LONG).show();
+			} else {
+				cursor_viatura.moveToPrevious();
+				mostrarDadosViatura();
+				desativarCamposViatura();
+			}
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhuma Viatura Cadastrada", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void moverPrimeiroViatura() {
+		if (cursor_viatura.getCount() > 0) {
+			if (cursor_viatura.isFirst()) {
+				Toast.makeText(getApplicationContext(), "Primeiro Registro",
+						Toast.LENGTH_LONG).show();
+			} else {
+				cursor_viatura.moveToFirst();
+				mostrarDadosViatura();
+				desativarCamposViatura();
+			}
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhuma Viatura Cadastrada", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void moverUltimoViatura() {
+		if (cursor_viatura.getCount() > 0) {
+			if (cursor_viatura.isLast()) {
+				Toast.makeText(getApplicationContext(), "Último registro",
+						Toast.LENGTH_LONG).show();
+			} else {
+				cursor_viatura.moveToLast();
+				mostrarDadosViatura();
+				desativarCamposViatura();
+			}
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhuma Viatura Cadastrada", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void salvarViatura() {
+		iniciarObjetos();
+
+		String placa = etPlaca.getText().toString();
+		String area = etAreaViatura.getText().toString();
+
+		if (!this.alterar) {
+			try {
+				banco.execSQL("insert into viatura(placa,area) values(" + "'"
+						+ placa + "'," + "'" + area + "');");
+				AlertDialog.Builder alerta = new AlertDialog.Builder(Programa.this);
+				alerta.setTitle("Cadastro de Viatura!");
+				alerta.setNeutralButton("OK", null);
+				alerta.setMessage("Viatura Cadastrada com Sucesso!");
+				alerta.show();
+				listarViatura();
+				moverUltimoViatura();
+				desativarCamposViatura();
+
+			} catch (Exception ex) {
+				Toast.makeText(getApplicationContext(),
+						"Erro " + ex.getMessage(), Toast.LENGTH_LONG).show();
+			}
+		}
+	}
+
+	public void deletarViatura() {
+		if (cursor_viatura.getCount() > 0) {
+			String sql = "delete from viatura where id_viat = "
+					+ ""
+					+ Integer.parseInt(cursor_viatura.getString(cursor_viatura
+							.getColumnIndex("id_viat")));
+			banco.execSQL(sql);
+			moverAnterior();
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhuma Viatura Cadastrada", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void alterarViatura() {
+		if (cursor_viatura.getCount() > 0) {
+			String sql = "update viatura set placa = '"
+					+ etPlaca.getText().toString()
+					+ "' ,"
+					+ "area = '"
+					+ etAreaViatura.getText().toString()
+					+ "' where viatura.id_viat = "
+					+ Integer.parseInt(cursor_viatura.getString(cursor_viatura
+							.getColumnIndex("id_viat")));
+			banco.execSQL(sql);
+			cursor_viatura.moveToFirst();
+			Toast.makeText(
+					getApplicationContext(),
+					"Viatura "
+							+ cursor_viatura.getString(cursor_viatura
+									.getColumnIndex("placa"))
+							+ " Alterada com Sucesso!", Toast.LENGTH_LONG)
+					.show();
+			listarViatura();
+			moverUltimoViatura();
+			desativarCamposViatura();
+		} else {
+			Toast.makeText(getApplicationContext(),
+					"Nenhuma Viatura Cadastrada", Toast.LENGTH_LONG).show();
+		}
+
+	}
+
+	public void habilitarCamposViatura() {
+		etAreaViatura.setEnabled(true);
+		etPlaca.setEnabled(true);
+		btSalvarViatura.setEnabled(true);
+	}
+
+	public void limparCampos() {
+
+		etAreaViatura.setText("");
+		etPlaca.setText("");
+	}
+
+	// Metódos para Cadastro de Epc
+	public void chamaTelaCadEpc() {
+
+		setContentView(R.layout.telacadastroepc);
+		ListarEpc();
+		Toast.makeText(getApplicationContext(), "Cadastro de EPC",
+				Toast.LENGTH_LONG).show();
+		iniciarObjetos();
+
+		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+				android.R.layout.simple_list_item_1, listaEpc);
+		ArrayAdapter<String> adapter2 = new ArrayAdapter<String>(this,
+				android.R.layout.simple_list_item_1, condicao);
+		spNomeEpc.setAdapter(adapter);
+		spCondicaoEpc.setAdapter(adapter2);
+		tvViatura.setText(cursor_viatura.getString(cursor_viatura
+				.getColumnIndex("placa")));
+		data = new MaskEditTextChangedListener("##/##/####", etDataTesteEpc);
+
+		etDataTesteEpc.addTextChangedListener(data);
+
+		btSalvarEpc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+
+				salvarEpc();
+
+			}
+		});
+		btVoltarEpc.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				chamaTelaCadViatura();
+			}
+		});
+	}
+
+	public void habilitarCamposEpc() {
+		etDataTesteEpc.setEnabled(true);
+		etLaudoEpc.setEnabled(true);
+		btSalvarEpc.setEnabled(true);
+		spCondicaoEpc.setEnabled(true);
+		spNomeEpc.setEnabled(true);
+
+	}
+
+	public void desabilitarCamposEpc() {
+		etDataTesteEpc.setEnabled(false);
+		etLaudoEpc.setEnabled(false);
+		btSalvarEpc.setEnabled(false);
+		spCondicaoEpc.setEnabled(false);
+		spNomeEpc.setEnabled(false);
+
+	}
+
+	public void ListarEpc() {
+		cursor_epc = banco.query("epc", new String[] { "id_epc", "laudo",
+				"nome", "condicao", "data_teste", "data_venc_epc ",
+				"id_viat_fk" }, null, null, null, null, null);
+		cursor_epc.moveToFirst();
+	}
+
+	public void salvarEpc() {
+
+		iniciarObjetos();
+
+		int idviat = Integer.parseInt(cursor_viatura.getString(cursor_viatura
+				.getColumnIndex("id_viat")));
+		String laudo = etLaudoEpc.getText().toString();
+		String nome = spNomeEpc.getSelectedItem().toString();
+		String dataTeste = etDataTesteEpc.getText().toString();
+		String condicao = spCondicaoEpc.getSelectedItem().toString();
+		int dia = Integer.parseInt(dataTeste.substring(0, 2));
+		int mes = Integer.parseInt(dataTeste.substring(3, 5));
+		int ano = Integer.parseInt(dataTeste.substring(6, 10));
+
+		DateTime dataTesteForm = new DateTime(ano, mes, dia, 0, 0);
+
+		DateTime dataVenc = dataTesteForm.plusMonths(12);
+		DateTimeFormatter dtfPadrao = DateTimeFormat.forPattern("dd/MM/yyyy");
+		tvVencEpc.setText(dataVenc.toString(dtfPadrao));
+		try {
+			banco.execSQL("insert into epc(laudo,nome,condicao,data_teste,data_venc_epc,id_viat_fk) values("
+					+ "'"
+					+ laudo
+					+ "',"
+					+ "'"
+					+ nome
+					+ "',"
+					+ "'"
+					+ condicao
+					+ "',"
+					+ "'"
+					+ dataTesteForm
+					+ "','"
+					+ dataVenc
+					+ "',"
+					+ idviat + ");");
+			ListarEpc();
+			AlertDialog.Builder alerta = new AlertDialog.Builder(Programa.this);
+			alerta.setTitle("Cadastro de EPC");
+			alerta.setNeutralButton("OK", null);
+			alerta.setMessage("Epc " + nome + " Cadastrado com Sucesso!");
+			alerta.show();
+			desabilitarCamposEpc();
+
+		} catch (Exception ex) {
+			Toast.makeText(getApplicationContext(), "Erro " + ex.getMessage(),
+					Toast.LENGTH_LONG).show();
+		}
+
+	}
+
+	public ArrayAdapter<String> listarEpiFunc() {
+
+		String sql = "select funcionario.nome as nome_func,epi.nome as nome_epi,laudo,"
+				+ "data_teste,data_venc_epi"
+				+ " from funcionario,epi"
+				+ " where funcionario.id_func = epi.id_func_fk;";
+		cursor_func = banco.rawQuery(sql, null);
+		cursor_func.moveToFirst();
+
+		List<String> listaepi = new ArrayList<String>();
+		String linha = 	"LISTA DE EPI";
+		listaepi.add(linha);
+		DateTimeFormatter dtfPadrao = DateTimeFormat.forPattern("dd/MM/yyyy");
+		for (int i = 0; i < cursor_func.getCount(); i++) {
+
+			DateTime datavenc = DateTime.parse(cursor_func
+					.getString(cursor_func.getColumnIndex("data_venc_epi")));
+			DateTime datahoje = new DateTime();
+			int j = Days.daysBetween(datahoje, datavenc).getDays();
+			linha = "FUNCIONÁRIO: "
+					+ cursor_func.getString(cursor_func
+							.getColumnIndex("nome_func"))
+					+ "\nEpi: "
+					+ cursor_func.getString(cursor_func
+							.getColumnIndex("nome_epi"))
+					+ "\nLaudo: "
+					+ cursor_func
+							.getString(cursor_func.getColumnIndex("laudo"))
+					+ "\nData Teste: "
+					+ DateTime.parse(
+							cursor_func.getString(cursor_func
+									.getColumnIndex("data_teste"))).toString(
+							dtfPadrao)
+					+ "\nData de Vencimento: "
+					+ DateTime.parse(
+							cursor_func.getString(cursor_func
+									.getColumnIndex("data_venc_epi")))
+							.toString(dtfPadrao) + "\nDias para Vencer: " + j;
+			if(j<=0){
+				linha = linha+ "\nSTATUS = VENCIDO"+"\n-------------------------------------------";
+				
+			}else{
+				linha = linha+"\nSTATUS = APTO"+"\n----------------------------------------------";
+			}
+
+			listaepi.add(linha);
+			cursor_func.moveToNext();
+		}
+		ArrayAdapter<String> adapter = new ArrayAdapter<>(
+				getApplicationContext(), android.R.layout.test_list_item,
+				listaepi);
+		return adapter;
+
+	}
+
+	public void avisaDias() {
+		
+		String sql = "select funcionario.nome as nome_func,epi.nome as nome_epi,laudo,"
+				+ "data_teste,data_venc_epi"
+				+ " from funcionario,epi"
+				+ " where funcionario.id_func = epi.id_func_fk;";
+
+		cursor_func = banco.rawQuery(sql, null);
+		cursor_func.moveToFirst();
+
+		DateTimeFormatter dtfPadrao = DateTimeFormat.forPattern("dd/MM/yyyy");
+		
+		for (int i = 0; i < cursor_func.getCount(); i++) {
+
+			DateTime datavenc = DateTime.parse(cursor_func.getString(cursor_func.getColumnIndex("data_venc_epi")));
+			DateTime datahoje = new DateTime();
+			int j = Days.daysBetween(datahoje, datavenc).getDays();
+			
+			if ((j < 7 )&& (j>0)) {
+				AlertDialog.Builder alerta = new AlertDialog.Builder(Programa.this);
+				alerta.setTitle("Atenção EPI vencendo em até 7 dias!");
+				alerta.setNeutralButton("OK", null);
+				alerta.setMessage("Funcionario:  "
+						+ cursor_func.getString(cursor_func
+								.getColumnIndex("nome_func"))
+						+ " \nEPI: "
+						+ cursor_func.getString(cursor_func
+								.getColumnIndex("nome_epi")) + "\n " + j
+						+ " dias para vencer");
+					alerta.show();
+			}
+			cursor_func.moveToNext();
+		}
+	}
+
+	public ArrayAdapter<String> listarEpcViat() {
+
+		String sql = "select placa,nome,laudo,"
+				+ "data_teste,data_venc_epc"
+				+ " from viatura,epc"
+				+ " where viatura.id_viat = epc.id_viat_fk;";
+		cursor_func = banco.rawQuery(sql, null);
+		cursor_func.moveToFirst();
+
+		List<String> listaepi = new ArrayList<String>();
+		String linha = "LISTA DE EPC";
+		listaepi.add(linha);
+		DateTimeFormatter dtfPadrao = DateTimeFormat.forPattern("dd/MM/yyyy");
+		for (int i = 0; i < cursor_func.getCount(); i++) {
+
+			DateTime datavenc = DateTime.parse(cursor_func
+					.getString(cursor_func.getColumnIndex("data_venc_epc")));
+			DateTime datahoje = new DateTime();
+			int j = Days.daysBetween(datahoje, datavenc).getDays();
+			linha = "VIATURA: "
+					+ cursor_func.getString(cursor_func
+							.getColumnIndex("placa"))
+					+ "\nEPC: "
+					+ cursor_func.getString(cursor_func
+							.getColumnIndex("nome"))
+					+ "\nLAUDO: "
+					+ cursor_func
+							.getString(cursor_func.getColumnIndex("laudo"))
+					+ "\nDATA DO TESTE: "
+					+ DateTime.parse(
+							cursor_func.getString(cursor_func
+									.getColumnIndex("data_teste"))).toString(
+							dtfPadrao)
+					+ "\nDATA DO VENCIMENTO: "
+					+ DateTime.parse(
+							cursor_func.getString(cursor_func
+									.getColumnIndex("data_venc_epc")))
+							.toString(dtfPadrao) + "\nDIAS PARA VENCER: " + j;
+			if(j<=0){
+				linha = linha+ "\nSTATUS = VENCIDO"+"\n-------------------------------------------";
+				
+			}else{
+				linha = linha+"\nSTATUS = APTO"+"\n----------------------------------------------";
+			}
+			listaepi.add(linha);
+			cursor_func.moveToNext();
+		}
+		ArrayAdapter<String> adapter = new ArrayAdapter<>(
+				getApplicationContext(), android.R.layout.test_list_item,
+				listaepi);
+		return adapter;
+
+	}
+
+	public void avisaDiasEpc() {
+		
+		String sql = "select placa,nome,laudo,"
+				+ "data_teste,data_venc_epc"
+				+ " from viatura,epc"
+				+ " where viatura.id_viat = epc.id_viat_fk;";
+		
+		cursor_func = banco.rawQuery(sql, null);
+		cursor_func.moveToFirst();
+
+		DateTimeFormatter dtfPadrao = DateTimeFormat.forPattern("dd/MM/yyyy");
+		
+		for (int i = 0; i < cursor_func.getCount(); i++) {
+
+			DateTime datavenc = 
+					DateTime.parse(cursor_func.getString(cursor_func.getColumnIndex("data_venc_epc")));
+			DateTime datahoje = new DateTime();
+			int j = Days.daysBetween(datahoje, datavenc).getDays();
+			
+			if (j < 7 && j>0) {
+				AlertDialog.Builder alerta = new AlertDialog.Builder(Programa.this);
+				alerta.setTitle("Atenção EPC vencendo em até 7 dias!");
+				alerta.setNeutralButton("OK", null);
+				alerta.setMessage("Viatura:  "
+						+ cursor_func.getString(cursor_func
+								.getColumnIndex("placa"))
+						+ " \nEPC: "
+						+ cursor_func.getString(cursor_func
+								.getColumnIndex("nome")) + "\n " + j
+						+ " dias para vencer");
+					alerta.show();
+			}
+			cursor_func.moveToNext();
+		}
+	}
+
+	public void chamaTelaManterEpi(){
+		setContentView(R.layout.telamanterepi);
+		iniciarObjetos();
+		
+		
+	}
+	
+	public void carregaEpi(){
+		
+		iniciarObjetos();
+		String sql1 = "select nome from funcionario group by nome"; 
+				String sql2 = "select funcionario.nome as nome_func,epi.nome as nome_epi,laudo,condicao,"
+				+ "data_teste,data_venc_epi"
+				+ " from funcionario,epi"
+				+ " where funcionario.id_func = epi.id_func_fk;";
+		
+		cursor_func = banco.rawQuery(sql1, null);
+		cursor_func.moveToFirst();
+		cursor_func2 = banco.rawQuery(sql2, null);
+		cursor_func2.moveToFirst();
+		List<String> funcionario = new ArrayList<>();
+		for(int i=0;i<cursor_func.getCount();i++){
+			funcionario.add(cursor_func.getString(cursor_func.getColumnIndex("nome")));
+			cursor_func.moveToNext();
+		}
+		
+		
+		ArrayAdapter<String>adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, funcionario);
+		ArrayAdapter<String>adapter2 = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, listaepi);
+		ArrayAdapter<String>adapter3 = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, condicao);
+		
+		spManterEpiFuncionario.setAdapter(adapter);
+		spManterEpiNome.setAdapter(adapter2);
+		spManterEpiCondicao.setAdapter(adapter3);
+		
+		
+	}
+
+	public void mostrarDadosManterEpi(){
+		iniciarObjetos();
+		carregaEpi();
+		tvManterEpiFuncioanario.setText(cursor_func2.getString(cursor_func2.getColumnIndex("nome_func")));
+		tvManterEpiCondicao.setText(cursor_func2.getString(cursor_func2.getColumnIndex("condicao")));
+		tvManterEpiNome.setText(cursor_func2.getString(cursor_func2.getColumnIndex("nome_epi")));
+		etManterEpiDataTeste.setText(cursor_func2.getString(cursor_func2.getColumnIndex("data_teste")));
+		etManterEpiDataVencimento.setText(cursor_func2.getString(cursor_func2.getColumnIndex("data_venc_epi")));
+		etManterEpiLaudo.setText(cursor_func2.getString(cursor_func2.getColumnIndex("laudo")));
+		spManterEpiFuncionario.setSelected(true);
+	
+	}
+}
